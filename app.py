@@ -70,15 +70,15 @@ def calculate_market_share(df):
     market_share = df.pivot_table(
         index="ラウンド",
         columns="Player",
-        values=["S島販売数量", "H島販売数"],
+        values=["S島販売数量", "H島販売数量"],
         aggfunc="sum",
     )
 
     s_total = market_share["S島販売数量"].sum(axis=1)
     s_share = market_share["S島販売数量"].div(s_total, axis=0) * 100
 
-    h_total = market_share["H島販売数"].sum(axis=1)
-    h_share = market_share["H島販売数"].div(h_total, axis=0) * 100
+    h_total = market_share["H島販売数量"].sum(axis=1)
+    h_share = market_share["H島販売数量"].div(h_total, axis=0) * 100
 
     return s_share, h_share, market_share
 
@@ -90,10 +90,10 @@ def predict_demand(demand_data, current_round):
     # 1. 単純移動平均（過去3期）
     if len(demand_data) >= 3:
         predictions["ma3_s"] = demand_data["S島販売数量"].tail(3).mean()
-        predictions["ma3_h"] = demand_data["H島販売数"].tail(3).mean()
+        predictions["ma3_h"] = demand_data["H島販売数量"].tail(3).mean()
     else:
         predictions["ma3_s"] = demand_data["S島販売数量"].mean()
-        predictions["ma3_h"] = demand_data["H島販売数"].mean()
+        predictions["ma3_h"] = demand_data["H島販売数量"].mean()
 
     # 2. 加重移動平均
     if len(demand_data) >= 3:
@@ -102,11 +102,11 @@ def predict_demand(demand_data, current_round):
             demand_data["S島販売数量"].tail(3), weights=weights
         )
         predictions["wma_h"] = np.average(
-            demand_data["H島販売数"].tail(3), weights=weights
+            demand_data["H島販売数量"].tail(3), weights=weights
         )
     else:
         predictions["wma_s"] = demand_data["S島販売数量"].mean()
-        predictions["wma_h"] = demand_data["H島販売数"].mean()
+        predictions["wma_h"] = demand_data["H島販売数量"].mean()
 
     # 3. 線形トレンド予測
     if len(demand_data) >= 2:
@@ -115,7 +115,7 @@ def predict_demand(demand_data, current_round):
         p_s = np.poly1d(z_s)
         predictions["trend_s"] = p_s(len(demand_data))
 
-        z_h = np.polyfit(x, demand_data["H島販売数"], 1)
+        z_h = np.polyfit(x, demand_data["H島販売数量"], 1)
         p_h = np.poly1d(z_h)
         predictions["trend_h"] = p_h(len(demand_data))
 
@@ -123,7 +123,7 @@ def predict_demand(demand_data, current_round):
         predictions["z_h"] = z_h
     else:
         predictions["trend_s"] = demand_data["S島販売数量"].iloc[-1]
-        predictions["trend_h"] = demand_data["H島販売数"].iloc[-1]
+        predictions["trend_h"] = demand_data["H島販売数量"].iloc[-1]
         predictions["z_s"] = [0, 0]
         predictions["z_h"] = [0, 0]
 
@@ -135,12 +135,12 @@ def predict_demand(demand_data, current_round):
             + (1 - alpha) * demand_data["S島販売数量"].iloc[-2]
         )
         predictions["exp_h"] = (
-            alpha * demand_data["H島販売数"].iloc[-1]
-            + (1 - alpha) * demand_data["H島販売数"].iloc[-2]
+            alpha * demand_data["H島販売数量"].iloc[-1]
+            + (1 - alpha) * demand_data["H島販売数量"].iloc[-2]
         )
     else:
         predictions["exp_s"] = demand_data["S島販売数量"].iloc[-1]
-        predictions["exp_h"] = demand_data["H島販売数"].iloc[-1]
+        predictions["exp_h"] = demand_data["H島販売数量"].iloc[-1]
 
     return predictions
 
@@ -207,10 +207,10 @@ if fs_data_file and result_info_file:
                 fig_h = px.scatter(
                     result_info,
                     x="ラウンド",
-                    y="H島販売数",
+                    y="H島販売数量",
                     color="Player",
                     title="H島販売数量推移",
-                    labels={"H島販売数": "H島販売数量", "ラウンド": "ラウンド"},
+                    labels={"H島販売数量": "H島販売数量", "ラウンド": "ラウンド"},
                     height=400,
                 )
                 fig_h.update_traces(marker=dict(size=12))
@@ -224,7 +224,7 @@ if fs_data_file and result_info_file:
             # 総販売数量推移
             st.subheader("島別総販売数量推移")
             total_sales = (
-                result_info.groupby("ラウンド")[["S島販売数量", "H島販売数"]]
+                result_info.groupby("ラウンド")[["S島販売数量", "H島販売数量"]]
                 .sum()
                 .reset_index()
             )
@@ -243,7 +243,7 @@ if fs_data_file and result_info_file:
             fig_total.add_trace(
                 go.Scatter(
                     x=total_sales["ラウンド"],
-                    y=total_sales["H島販売数"],
+                    y=total_sales["H島販売数量"],
                     mode="lines+markers",
                     name="H島総販売数",
                     line=dict(color="#ff7f0e", width=3),
@@ -274,7 +274,7 @@ if fs_data_file and result_info_file:
                 st.dataframe(s_stats.round(1))
             with col2:
                 st.markdown("**H島販売統計**")
-                h_stats = result_info.groupby("Player")["H島販売数"].agg(
+                h_stats = result_info.groupby("Player")["H島販売数量"].agg(
                     ["mean", "std", "sum"]
                 )
                 h_stats.columns = ["平均", "標準偏差", "合計"]
@@ -288,7 +288,7 @@ if fs_data_file and result_info_file:
                 result_info["WIL"] + result_info["S^EL"] + result_info["H^EL"]
             )
             result_info["販売数合計"] = (
-                result_info["S島販売数量"] + result_info["H島販売数"]
+                result_info["S島販売数量"] + result_info["H島販売数量"]
             )
             result_info["広告効率"] = result_info["販売数合計"] / (
                 result_info["広告費合計"] + 1
@@ -456,7 +456,7 @@ if fs_data_file and result_info_file:
 
             # 売上計算
             result_info["S島売上"] = result_info["S島販売数量"] * result_info["S島価格"]
-            result_info["H島売上"] = result_info["H島販売数"] * result_info["H島価格"]
+            result_info["H島売上"] = result_info["H島販売数量"] * result_info["H島価格"]
             result_info["総売上"] = result_info["S島売上"] + result_info["H島売上"]
 
             # 売上推移
@@ -532,7 +532,7 @@ if fs_data_file and result_info_file:
                 fig_price_vol_h = px.scatter(
                     result_info,
                     x="H島価格",
-                    y="H島販売数",
+                    y="H島販売数量",
                     color="Player",
                     title="H島：価格vs販売数",
                     trendline="ols",
@@ -560,7 +560,7 @@ if fs_data_file and result_info_file:
 
             # 総需要データの準備
             demand_data = (
-                result_info.groupby("ラウンド")[["S島販売数量", "H島販売数"]]
+                result_info.groupby("ラウンド")[["S島販売数量", "H島販売数量"]]
                 .sum()
                 .reset_index()
             )
@@ -626,7 +626,7 @@ if fs_data_file and result_info_file:
                 st.metric(
                     "H島総需要予測（平均）",
                     f"{avg_pred_h}個",
-                    f"{avg_pred_h - demand_data['H島販売数'].iloc[-1]:.0f}",
+                    f"{avg_pred_h - demand_data['H島販売数量'].iloc[-1]:.0f}",
                     delta_color="normal",
                 )
 
@@ -674,7 +674,7 @@ if fs_data_file and result_info_file:
             fig_forecast.add_trace(
                 go.Scatter(
                     x=demand_data["ラウンド"],
-                    y=demand_data["H島販売数"],
+                    y=demand_data["H島販売数量"],
                     mode="lines+markers",
                     name="実績",
                     line=dict(color="#2ca02c", width=3),
@@ -687,7 +687,7 @@ if fs_data_file and result_info_file:
             fig_forecast.add_trace(
                 go.Scatter(
                     x=[current_round, future_round],
-                    y=[demand_data["H島販売数"].iloc[-1], avg_pred_h],
+                    y=[demand_data["H島販売数量"].iloc[-1], avg_pred_h],
                     mode="lines+markers",
                     name="予測",
                     line=dict(color="#d62728", dash="dash", width=3),
@@ -787,10 +787,10 @@ if fs_data_file and result_info_file:
                     if len(demand_data) >= 2:
                         h_growth = (
                             (
-                                demand_data["H島販売数"].iloc[-1]
-                                - demand_data["H島販売数"].iloc[-2]
+                                demand_data["H島販売数量"].iloc[-1]
+                                - demand_data["H島販売数量"].iloc[-2]
                             )
-                            / demand_data["H島販売数"].iloc[-2]
+                            / demand_data["H島販売数量"].iloc[-2]
                             * 100
                         )
                         st.write(f"- 直近の成長率: {h_growth:.1f}%")
@@ -875,7 +875,7 @@ else:
         - Player: プレイヤー名
         - ラウンド: ラウンド番号
         - S島販売数量: S島での販売数量
-        - H島販売数: H島での販売数量
+        - H島販売数量: H島での販売数量
         - S島価格: S島での販売価格
         - H島価格: H島での販売価格
         - WIL: ラジオ広告投資額
