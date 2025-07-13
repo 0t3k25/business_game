@@ -285,7 +285,9 @@ if fs_data_file and result_info_file:
 
             # 広告費計算
             result_info["広告費合計"] = (
-                result_info["WIL"] + result_info["S^EL"] + result_info["H^EL"]
+                result_info["ラジオ広告"]
+                + result_info["S島タウン誌広告"]
+                + result_info["H島タウン誌広告"]
             )
             result_info["販売数合計"] = (
                 result_info["S島販売数量"] + result_info["H島販売数量"]
@@ -300,7 +302,7 @@ if fs_data_file and result_info_file:
                 st.subheader("ラジオ広告投資効果")
                 fig_wil = px.scatter(
                     result_info,
-                    x="WIL",
+                    x="ラジオ広告",
                     y="S島販売数量",
                     color="Player",
                     title="ラジオ広告投資額 vs S島販売数量",
@@ -318,7 +320,7 @@ if fs_data_file and result_info_file:
                 st.subheader("タウン誌広告投資効果")
                 fig_tel = px.scatter(
                     result_info,
-                    x="S^EL",
+                    x="S島タウン誌広告",
                     y="S島販売数量",
                     color="Player",
                     title="S島タウン誌広告 vs S島販売数量",
@@ -357,9 +359,9 @@ if fs_data_file and result_info_file:
                 result_info.groupby("Player")
                 .agg(
                     {
-                        "WIL": "mean",
-                        "S^EL": "mean",
-                        "H^EL": "mean",
+                        "ラジオ広告": "mean",
+                        "S島タウン誌広告": "mean",
+                        "H島タウン誌広告": "mean",
                         "広告費合計": "mean",
                         "広告効率": "mean",
                     }
@@ -878,9 +880,9 @@ else:
         - H島販売数量: H島での販売数量
         - S島価格: S島での販売価格
         - H島価格: H島での販売価格
-        - WIL: ラジオ広告投資額
-        - S^EL: S島タウン誌広告投資額
-        - H^EL: H島タウン誌広告投資額
+        - ラジオ広告: ラジオ広告投資額
+        - S島タウン誌広告: S島タウン誌広告投資額
+        - H島タウン誌広告: H島タウン誌広告投資額
         """
         )
 
