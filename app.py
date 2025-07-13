@@ -457,8 +457,12 @@ if fs_data_file and result_info_file:
             st.header("💰 財務分析")
 
             # 売上計算
-            result_info["S島売上"] = result_info["S島販売数量"] * result_info["S島価格"]
-            result_info["H島売上"] = result_info["H島販売数量"] * result_info["H島価格"]
+            result_info["S島売上"] = (
+                result_info["S島販売数量"] * result_info["S島販売価格"]
+            )
+            result_info["H島売上"] = (
+                result_info["H島販売数量"] * result_info["H島販売価格"]
+            )
             result_info["総売上"] = result_info["S島売上"] + result_info["H島売上"]
 
             # 売上推移
@@ -488,7 +492,7 @@ if fs_data_file and result_info_file:
                 fig_price_s = px.box(
                     result_info,
                     x="ラウンド",
-                    y="S島価格",
+                    y="S島販売価格",
                     title="S島価格分布",
                     height=400,
                 )
@@ -503,7 +507,7 @@ if fs_data_file and result_info_file:
                 fig_price_h = px.box(
                     result_info,
                     x="ラウンド",
-                    y="H島価格",
+                    y="H島販売価格",
                     title="H島価格分布",
                     height=400,
                 )
@@ -521,7 +525,7 @@ if fs_data_file and result_info_file:
             with col1:
                 fig_price_vol_s = px.scatter(
                     result_info,
-                    x="S島価格",
+                    x="S島販売価格",
                     y="S島販売数量",
                     color="Player",
                     title="S島：価格vs販売数",
@@ -533,7 +537,7 @@ if fs_data_file and result_info_file:
             with col2:
                 fig_price_vol_h = px.scatter(
                     result_info,
-                    x="H島価格",
+                    x="H島販売価格",
                     y="H島販売数量",
                     color="Player",
                     title="H島：価格vs販売数",
@@ -546,7 +550,13 @@ if fs_data_file and result_info_file:
             st.subheader("💵 財務サマリー")
             financial_summary = (
                 result_info.groupby("Player")
-                .agg({"総売上": ["mean", "sum"], "S島価格": "mean", "H島価格": "mean"})
+                .agg(
+                    {
+                        "総売上": ["mean", "sum"],
+                        "S島販売価格": "mean",
+                        "H島販売価格": "mean",
+                    }
+                )
                 .round(0)
             )
             financial_summary.columns = [
@@ -878,8 +888,8 @@ else:
         - ラウンド: ラウンド番号
         - S島販売数量: S島での販売数量
         - H島販売数量: H島での販売数量
-        - S島価格: S島での販売価格
-        - H島価格: H島での販売価格
+        - S島販売価格: S島での販売価格
+        - H島販売価格: H島での販売価格
         - ラジオ広告: ラジオ広告投資額
         - S島タウン誌広告: S島タウン誌広告投資額
         - H島タウン誌広告: H島タウン誌広告投資額
